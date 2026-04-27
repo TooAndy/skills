@@ -1,15 +1,18 @@
 # AI Agent 月度案例报告系统 — 设计文档
 
 **日期**: 2026/04/27
-**状态**: 已批准
+**状态**: 已批准 (v2)
 
 ---
 
 ## 1. 目标
 
-设计一套 Skill 系统，通过 Claude Code / Codex 等工具自动化生成每月 AI Agent 应用案例报告。
+设计一套 Skill 系统，通过 Claude Code / Codex + gstack browse 自动化生成每月 AI Agent 应用案例报告。
 
-核心思路：**用 AI 直接阅读页面内容，替代传统爬虫**，解决爬虫方案通用性差、反爬严重、数据质量低的问题。
+核心思路：
+- **gstack browse 替代爬虫** — AI 直接阅读页面，不依赖 CSS 选择器
+- **本地文章库** — 解决上下文长度问题，支持海量筛选
+- **分阶段工作流** — 抓取 → 筛选 → 精选 → 报告
 
 ---
 
@@ -18,31 +21,71 @@
 ### 2.1 架构图
 
 ```
-/agent-report (主 skill)
+用户调用 /agent-report 2026-03
     │
-    ├── 接收月份参数 (YYYY-MM)
+    ├── Step 1: 创建月度目录
+    │       reports/2026-03/
     │
-    ├── 调度 /agent-report-fetch (并行)
-    │       └── 使用 agent-browser 访问各信源
-    │           └── AI 阅读页面，提取案例信息
+    ├── Step 2: agent-report-fetch (并行)
+    │       ├── gstack browse 访问各信源
+    │       ├── 提取文章元信息
+    │       ├── 存入 articles/
+    │       ├── 构建 index.json
+    │       └── 筛选候选 → candidates/
     │
-    ├── 汇总案例池
+    ├── Step 3: agent-report-score
+    │       ├── 读取 index.json
+    │       ├── 按多维度排序
+    │       └── 输出 TOP 5 + 理由
     │
-    ├── 调度 /agent-report-score
-    │       └── AI 对案例排序，说明理由
+    ├── Step 4: 深度分析 (per candidate)
+    │       └── 访问原文，提取详细信息
     │
-    └── 调度 /agent-report-render
-            └── 生成 Markdown 报告
+    ├── Step 5: agent-report-render
+    │       └── 生成 Markdown 报告
+    │
+    └── 输出: YYYY-MM-AI-Agent-案例报告.md
 ```
 
-### 2.2 Skill 清单
+### 2.2 本地文章库结构
 
-| Skill | 职责 | 调用方式 |
-|-------|------|----------|
-| `/agent-report` | 主 skill，任务编排，接收月份参数 | 用户直接调用 |
-| `/agent-report-fetch` | 并行调度 agent-browser 遍历信源，AI 提取案例 | 由主 skill 调用 |
-| `/agent-report-score` | AI 对案例排序，说明理由 | 由主 skill 调用 |
-| `/agent-report-render` | 按模板生成 Markdown 报告 | 由主 skill 调用 |
+```
+reports/
+└── {year}-{month}/              # 例: reports/2026-03/
+    ├── articles/                 # 所有抓取的文章
+    │   ├── hn_001.md           # Hacker News
+    │   ├── hn_002.md
+    │   ├── gh_001.md           # GitHub
+    │   ├── media_001.md       # 行业媒体
+    │   └── ...
+    ├── index.json               # 文章索引
+    ├── candidates/              # 候选案例
+    └── YYYY-MM-AI-Agent-案例报告.md  # 最终报告
+```
+
+### 2.3 index.json 格式
+
+```json
+{
+  "month": "2026-03",
+  "created_at": "2026-04-27",
+  "articles": [
+    {
+      "id": "hn_001",
+      "title": "An AI agent deleted our production database",
+      "url": "https://twitter.com/...",
+      "source": "Hacker News",
+      "published_at": "2026-03-15",
+      "points": 685,
+      "comments": 830,
+      "abstract": "A practitioner's confession...",
+      "local_path": "articles/hn_001.md",
+      "tags": ["ai-agent", "incident", "production"]
+    }
+  ],
+  "total_count": 47
+}
+```
 
 ---
 
@@ -50,191 +93,119 @@
 
 | 信源类型 | 推荐渠道 | 搜索关键词 |
 |----------|----------|------------|
-| 技术社区/博客 | Hacker News、GitHub Trending、LangChain 博客、CrewAI 案例 | "AI Agent"、"autonomous LLM"、"AI agent use case" |
-| 行业媒体 | 机器之心、量子位、InfoQ、人人都是产品经理 | "智能体"、"Agent"、"AI Agent 应用" |
-| 产品更新 | OpenAI、Anthropic、DeepSeek 官方文档/案例板块 | "examples"、"use cases"、"案例" |
-| 社交媒体 | Twitter/X（AI从业者）、Reddit (r/LocalLLaMA、r/SideProject) | AI agent 相关讨论 |
-| AI 导航站 | 未来百科、AI产品精选 | AI Agent 相关收录 |
-| 学术/Newsletter | arXiv (AI agent 相关论文)、AI Newsletter RSS | - |
+| 技术社区 | Hacker News (hn.algolia.com) | "AI agent", "LLM agent" |
+| 技术社区 | GitHub Trending | "AI agent", "LLM", "autonomous" |
+| 行业媒体 | 机器之心、量子位、InfoQ、人人都是产品经理 | "智能体", "Agent" |
+| 官方文档 | OpenAI、Anthropic、DeepSeek 案例板块 | "examples", "use cases" |
+| 社交媒体 | Twitter/X、Reddit (r/LocalLLaMA) | "AI Agent" |
+| 学术 | arXiv | "AI agent", "LLM agent" |
 
 ---
 
-## 4. 案例结构
+## 4. Skill 清单
 
-每个案例包含以下字段，**所有字段必须有明确来源**：
+| Skill | 职责 |
+|-------|------|
+| `/agent-report` | 主 skill，任务编排 |
+| `/agent-report-fetch` | 并行抓取，gstack browse + 本地文章库 |
+| `/agent-report-score` | 多维度排序，输出 TOP 5 |
+| `/agent-report-render` | 生成 Markdown 报告 |
+
+---
+
+## 5. 案例结构
+
+每个案例包含（所有信息必须有明确来源）：
 
 | 字段 | 说明 | 来源要求 |
 |------|------|----------|
 | 标题 | 案例名称 | 必须 |
 | 来源链接 | 原始页面 URL | 必须 |
 | 案例概述 | 解决什么问题、背景 | 必须 |
-| 技术栈 | 使用的模型、框架、工具 | 明确标注来源；**未提及则继续搜索其他来源补充** |
-| 实现路径 | 核心架构、关键流程 | 明确标注来源；**未提及则继续搜索补充** |
-| 效果数据 | 性能指标、收益量化 | 明确标注来源；**未提及则继续搜索补充** |
-| 技术亮点 | 值得学习的点 | AI 分析，标注推断依据 |
-| 局限分析 | 不足、风险、约束 | AI 分析，标注推断依据 |
-| 团队可借鉴点 | 我们能怎么用 | AI 分析，标注推断依据 |
-
-**关键规则：如果某信息在原始来源未提及，继续搜索其他来源补充，而不是标注"未提及"。**
+| 技术栈 | 模型、框架、工具 | 明确标注来源；**缺失则继续搜索补充** |
+| 实现路径 | 核心架构、关键流程 | 明确标注来源 |
+| 效果数据 | 性能指标、收益量化 | 明确标注来源 |
+| 技术亮点 | 值得学习的点 | AI 分析，标注依据 |
+| 局限分析 | 不足、风险、约束 | AI 分析，标注依据 |
+| 团队可借鉴点 | 我们能怎么用 | AI 分析，标注依据 |
 
 ---
 
-## 5. 评分与排序
-
-### 5.1 评分方式
+## 6. 评分机制
 
 **AI 主观判断 + 理由说明**，不打具体分数。
 
-AI 根据以下维度综合判断：
-- 技术创新性
-- 落地可行性
-- 行业影响力
-- 时效性
-- 可借鉴价值
+评分维度：
+1. **技术创新性** — 是否有技术突破
+2. **落地可行性** — 团队是否可以借鉴
+3. **行业影响力** — 对行业的影响
+4. **时效性** — 是否当月最新
+5. **可借鉴价值** — 对团队的具体意义
 
-### 5.2 排序输出
-
-输出 TOP 5 案例，**每个案例说明排序理由**：
-```
-1. [案例标题]
-   排序理由：该案例在技术创新性和落地可行性上表现突出，具体理由如下...
+输出格式：
+```markdown
+### 1. [案例标题]
+**排序理由**:
+- 技术创新性：[分析]
+- 落地可行性：[分析]
+- 行业影响力：[分析]
+- 时效性：[分析]
+- 可借鉴价值：[分析]
+综合判断：[总结]
 ```
 
 ---
 
-## 6. 报告模板
+## 7. 报告模板
 
 ```markdown
 # {{ year }}-{{ month }} AI Agent 案例月度报告
 
 > 生成时间: {{ generated_at }}
-> 信源: Hacker News / GitHub Trending / 行业媒体 / 官方文档 / 社交媒体 / AI导航站 / arXiv / AI Newsletter
+> 信源: Hacker News / GitHub Trending / 行业媒体 / 官方文档 / 社交媒体 / arXiv
 
 ---
 
 ## 案例评分与排序
 
-AI 对所有案例进行了综合评估，以下为 TOP 5 及其排序理由：
+TOP 5 案例及其排序理由：
 
-### 1. [案例标题]
-**来源**: [URL]
+### {{ index }}. {{ title }}
+**来源**: {{ url }}
 
 **排序理由**:
-[AI 给出的排序理由，从技术创新性、落地可行性、行业影响力等角度说明]
+{{ ranking_reason }}
 
 ### 案例详情
 
 **案例概述**
-[内容]
+{{ overview }}
 
-**技术栈** [来源: URL]
-[内容]
+**技术栈** {{ source }}
+{{ tech_stack }}
 
-**实现路径** [来源: URL]
-[内容]
+**实现路径** {{ source }}
+{{ implementation_path }}
 
-**效果数据** [来源: URL]
-[内容]
+**效果数据** {{ source }}
+{{ effects }}
 
 **技术亮点**
-[内容]
+{{ highlights }}
 
 **局限分析**
-[内容]
+{{ limitations }}
 
 **团队可借鉴点**
-[内容]
+{{ takeaways }}
 
 ---
-
-[重复 2-5 个案例]
 
 ## 本月总结
 
-- 本月共收录 X 个案例
-- 主要集中在以下领域：[领域列表]
-- 整体趋势：[AI 给出的趋势分析]
-
 ## 下月关注
-
-- [关注点 1]
-- [关注点 2]
 ```
 
 ---
 
-## 7. 执行流程
-
-### 7.1 用户调用
-
-```bash
-# 在 Claude Code 中直接调用
-/agent-report 2026-03
-```
-
-### 7.2 完整流程
-
-1. **主 skill `/agent-report` 启动**
-   - 接收月份参数
-   - 初始化案例池
-
-2. **并行执行 `/agent-report-fetch`**
-   - 对每个信源启动 agent-browser
-   - AI 阅读页面，提取案例
-   - 汇总到案例池
-
-3. **执行 `/agent-report-score`**
-   - AI 读取案例池
-   - 按多维度排序
-   - 输出排序理由
-
-4. **执行 `/agent-report-render`**
-   - 按模板生成 Markdown
-   - 保存到 `YYYY-MM-AI-Agent-案例报告.md`
-
----
-
-## 8. 关键技术点
-
-### 8.1 agent-browser 调度
-
-- 每个信源分配独立的 agent-browser 实例
-- AI 监控进度，汇总结果
-- 支持失败重试
-
-### 8.2 信息完整性保障
-
-- 如果案例缺少关键字段，继续搜索其他来源
-- 直到信息补全或确认无法获取
-- 所有推断内容标注依据
-
-### 8.3 输出格式
-
-- 主格式：Markdown
-- 后期用户可自行转换为 HTML/Notion 等格式
-
----
-
-## 9. 文件结构
-
-```
-skills/
-├── agent-report/
-│   ├── SKILL.md              # 主 skill
-│   ├── agent-report-fetch/
-│   │   └── SKILL.md          # 抓取子 skill
-│   ├── agent-report-score/
-│   │   └── SKILL.md          # 评分子 skill
-│   └── agent-report-render/
-│       └── SKILL.md          # 渲染子 skill
-
-# 或按单个文件组织
-agent-report.md          # 主 skill prompt
-agent-report-fetch.md    # 抓取 prompt
-agent-report-score.md    # 评分 prompt
-agent-report-render.md   # 渲染 prompt
-```
-
----
-
-*设计文档批准日期: 2026/04/27*
+*设计文档批准日期: 2026/04/27 (v2)*
