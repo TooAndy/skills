@@ -48,6 +48,7 @@ description: Use when need to perform deep dive analysis on TOP 10 candidates - 
    - ❌ 禁止使用训练数据"补充"缺失信息
    - ❌ 禁止基于猜测写入技术架构、工具集等信息
    - ❌ 如果信息确实找不到，标记为"需要进一步调研"，不要编造
+   - ❌ **禁止基于上下文记忆/训练数据臆想内容**
 
 3. **信息来源验证**:
    - 技术架构必须来自 README/官网
@@ -66,6 +67,8 @@ description: Use when need to perform deep dive analysis on TOP 10 candidates - 
 5. 如果信息不足，使用 web_search 搜索补充
 6. 写入 deep_dive/candidate_XXX.md，包含真实来源链接
 ```
+
+**重要**: 执行前请确认 gstack browser 已激活。如果模型声称"我已经知道..."，这表明模型在臆想，必须使用 browse 工具实际访问页面。
 
 ### deep_dive 文件内容要求
 
