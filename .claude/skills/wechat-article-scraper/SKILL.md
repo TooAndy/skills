@@ -32,8 +32,9 @@ description: Use when scraping WeChat public account articles from album pages a
 ## 功能
 
 - 访问微信公众号相册页面 (mp.weixin.qq.com)
-- 抓取指定月份的 文章列表（标题、日期、链接）
-- 将结果保存为 Markdown 文件（带可点击链接）
+- 抓取指定月份的文章列表（标题、日期、链接）
+- **抓取每篇文章的完整正文内容**
+- 将结果保存为 Markdown 文件（完整原文 + 可点击链接）
 
 ## 目录结构
 
@@ -41,7 +42,8 @@ description: Use when scraping WeChat public account articles from album pages a
 wechat-article-scraper/
 ├── SKILL.md                    # 本文档
 └── scripts/
-    ├── extract_articles.py     # Python提取脚本
+    ├── extract_articles.py     # Python提取脚本（从HTML提取文章列表）
+    ├── fetch_article_content.py # Python抓取脚本（抓取文章完整内容）
     └── scrape_wechat.sh        # Bash一键抓取脚本
 ```
 
