@@ -32,10 +32,21 @@ description: Use when need to generate AI Agent case report in Markdown format f
 
 - `reports/{year}-{month}/ranking.json` - TOP 5 排序结果
 - `reports/{year}-{month}/deep_dive/` - TOP 10 深度剖析（用于 TOP 5 的完整内容）
+- `reports/{year}-{month}/candidates/` - TOP 10 候选（用于未入选案例的简介）
 
 ## 输出
 
 - `reports/{year}-{month}/YYYY-MM-AI-Agent-案例报告.md` - 最终报告
+
+## 报告包含内容
+
+### 完整案例（TOP 5）
+- 5-layer 深度剖析
+- 来源信息完整标注
+
+### 候选案例简介（TOP 10 中未入选 TOP 5 的）
+- 每个候选的 2-3 句简介
+- 说明未入选原因（如：热度不足、信息有限、重复案例等）
 
 ## 报告模板
 
@@ -130,6 +141,22 @@ description: Use when need to generate AI Agent case report in Markdown format f
 - 本月共收录 {{ cases|length }} 个案例
 - 类型分布: {{ type_distribution }}
 - 整体趋势: {{ trend_summary }}
+
+## 附录：候选案例简介
+
+以下是本月 TOP 10 中未入选详细报告的案例，按热度/相关度排序：
+
+{% for candidate in candidates %}
+### {{ loop.index + 5 }}. {{ candidate.name }}
+
+**简介**: {{ candidate.abstract }}
+
+**来源**: [{{ candidate.source }}]({{ candidate.url }})
+**热度**: {{ candidate.stars or candidate.points or "N/A" }}
+**未入选原因**: {{ candidate.exclusion_reason }}
+
+---
+{% endfor %}
 
 ## 下月关注
 

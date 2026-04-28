@@ -157,6 +157,7 @@ reports/{year}-{month}/
   "quick_summary": "2-3句话描述这是什么、解决什么、为什么值得关注",
   "screening_reason": "为什么进入 TOP 10（基于浏览验证）",
   "screening_notes": "备注：可能的优点/风险点",
+  "exclusion_reason": "如果未入选 TOP 5，说明原因（如：热度不足、信息有限、重复案例）",
   "deep_dive_path": "deep_dive/candidate_001.md",
   "verified": true,
   "verification_sources": ["https://github.com/xxx", "https://yyy.com"]
