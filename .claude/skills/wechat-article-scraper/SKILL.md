@@ -9,17 +9,17 @@ description: Use when scraping WeChat public account articles from album pages a
 
 ## 前置依赖
 
-**gstack** 是必需的浏览器自动化工具。如果未安装，会自动尝试安装。
+**gstack** 是必需的浏览器自动化工具，通过 `/open-gstack-browser` skill 提供。
 
-### 安装检查流程
+### 激活流程
 
 ```
-1. 检查 gstack 是否可用: gstack --version
-2. 如果不可用，尝试安装: /setup-gstack
-3. 如果安装失败，报错要求手动安装
+1. 尝试激活 gstack skill: /open-gstack-browser
+2. 如果 skill 不可用或激活失败，尝试安装: /setup-gstack
+3. 如果安装也失败，报错要求手动安装
 ```
 
-### 手动安装 gstack（如自动安装失败）
+### 手动安装（如自动激活失败）
 
 ```bash
 # 方式一：使用 skill 安装
