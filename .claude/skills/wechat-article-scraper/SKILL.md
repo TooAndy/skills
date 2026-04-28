@@ -7,6 +7,28 @@ description: Use when scraping WeChat public account articles from album pages a
 
 从微信公众号相册页面抓取文章列表并保存到本地文件。
 
+## 前置依赖
+
+**gstack** 是必需的浏览器自动化工具。如果未安装，会自动尝试安装。
+
+### 安装检查流程
+
+```
+1. 检查 gstack 是否可用: gstack --version
+2. 如果不可用，尝试安装: /setup-gstack
+3. 如果安装失败，报错要求手动安装
+```
+
+### 手动安装 gstack（如自动安装失败）
+
+```bash
+# 方式一：使用 skill 安装
+/setup-gstack
+
+# 方式二：手动安装（参考 gstack 官方文档）
+# 安装后验证: gstack --version
+```
+
 ## 功能
 
 - 访问微信公众号相册页面 (mp.weixin.qq.com)

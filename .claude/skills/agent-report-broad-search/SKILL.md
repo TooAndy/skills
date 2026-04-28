@@ -6,6 +6,28 @@ description: Use when need to perform broad search for AI Agent cases from multi
 
 阶段 1：从多个信源广度搜索，从成千上万的信息中收集候选案例。
 
+## 前置依赖
+
+**gstack** 是必需的浏览器自动化工具。如果未安装，会自动尝试安装。
+
+### 安装检查流程
+
+```
+1. 检查 gstack 是否可用: gstack --version
+2. 如果不可用，尝试安装: /setup-gstack
+3. 如果安装失败，报错要求手动安装
+```
+
+### 手动安装 gstack（如自动安装失败）
+
+```bash
+# 方式一：使用 skill 安装
+/setup-gstack
+
+# 方式二：手动安装（参考 gstack 官方文档）
+# 安装后验证: gstack --version
+```
+
 ## 硬性约束（必须遵守）
 
 1. **每条候选必须立即落盘** - 获取一条就写入 index.json，不要等到最后一起写

@@ -7,6 +7,28 @@ description: Use when need to screen candidates from broad search results to sel
 
 阶段 2：从阶段1收集的候选中，初筛出 TOP 10 最佳候选。
 
+## 前置依赖
+
+**gstack** 是必需的浏览器自动化工具。如果未安装，会自动尝试安装。
+
+### 安装检查流程
+
+```
+1. 检查 gstack 是否可用: gstack --version
+2. 如果不可用，尝试安装: /setup-gstack
+3. 如果安装失败，报错要求手动安装
+```
+
+### 手动安装 gstack（如自动安装失败）
+
+```bash
+# 方式一：使用 skill 安装
+/setup-gstack
+
+# 方式二：手动安装（参考 gstack 官方文档）
+# 安装后验证: gstack --version
+```
+
 ## 硬性约束
 
 1. **必须等阶段1完成** - 只有 index.json 中 total_count >= 100 才能开始
